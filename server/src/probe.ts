@@ -1,0 +1,1 @@
+const response = await fetch('https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=1&offset=0'); const body: unknown = await response.json(); const sample = Array.isArray(body) ? body[0] : body; console.log(JSON.stringify({ status: response.status, fields: typeof sample === 'object' && sample !== null ? Object.keys(sample) : [], sample }, null, 2));

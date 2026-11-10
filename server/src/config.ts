@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import process from 'node:process';
+import type { Config } from './types.js';
+const secret = (name: string): string => { const file = process.env[`${name}_FILE`]; if (file) { try { return fs.readFileSync(file, 'utf8').trim(); } catch { return ''; } } return process.env[name]?.trim() ?? ''; };
+export const loadConfig = (): Config => {
+  const password = secret('DASH_PASSWORD');
+  if (process.env.NODE_ENV === 'production' && !password) throw new Error('DASH_PASSWORD is required in production');
+  let overrides: Record<string, number> = {};
+  try { const parsed: unknown = JSON.parse(process.env.FEE_RATE_OVERRIDES ?? '{}'); if (typeof parsed === 'object' && parsed !== null) for (const [key, value] of Object.entries(parsed)) if (typeof value === 'number') overrides[key] = value; } catch { console.warn('Invalid FEE_RATE_OVERRIDES; using defaults'); }
+  const window = Number(process.env.BOT_WINDOW ?? 15) === 5 ? 5 : 15;
+  return { port: Number(process.env.PORT ?? 3001), dataDir: process.env.DATA_DIR ?? './data', dashboardUser: process.env.DASH_USER ?? 'admin', dashboardPassword: password, botApiKey: secret('BOT_API_KEY'), geminiApiKey: secret('GEMINI_API_KEY'), geminiModel: process.env.GEMINI_MODEL ?? '', aiEnabled: process.env.AI_ENABLED !== 'false', feeRate: Number(process.env.FEE_RATE ?? 0.07), slippageBps: Number(process.env.SLIPPAGE_BPS ?? 50), feeOverrides: overrides, aiRunUtcHour: Number(process.env.AI_RUN_UTC_HOUR ?? 1), aiMaxCallsPerDay: Number(process.env.AI_MAX_CALLS_PER_DAY ?? 6), aiMaxBetsPerRun: Number(process.env.MAX_BETS_PER_RUN ?? 10), aiMaxPerCategory: Number(process.env.MAX_PER_CATEGORY ?? 3), aiMaxPerEvent: Number(process.env.MAX_PER_EVENT ?? 1), aiBetUsd: Number(process.env.BET_USD ?? 10), aiMinEdge: Number(process.env.MIN_EDGE ?? .05), aiDailyProfitLock: Number(process.env.DAILY_PROFIT_LOCK ?? 15), aiDailyLossLimit: Number(process.env.DAILY_LOSS_LIMIT ?? 15), botEnabled: process.env.BOT_ENABLED !== 'false', botMinPrice: Number(process.env.BOT_MIN_PRICE ?? .80), botMaxPrice: Number(process.env.BOT_MAX_PRICE ?? .85), botMaxPositions: Number(process.env.BOT_MAX_POSITIONS ?? 10), botTradeUsd: Number(process.env.BOT_TRADE_USD ?? 10), botTp: Number(process.env.BOT_TP ?? .99), botSlUsd: Number(process.env.BOT_SL_USD ?? 3), botScanSeconds: Number(process.env.BOT_SCAN_SECONDS ?? 60), botMaxHoursToResolution: Number(process.env.BOT_MAX_HOURS_TO_RESOLUTION ?? 30) };
+};
